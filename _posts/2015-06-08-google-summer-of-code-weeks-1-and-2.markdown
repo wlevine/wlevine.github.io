@@ -30,7 +30,8 @@ Definitely missing a lot of stuff from this list, since I wasn't really keeping 
  that the nmatrix Rakefile has two parallel methods for building and
  packaging gems. `Gem::PackageTask` adds the package, and repackage tasks
  (which are the ones listed in the nmatrix docs), while`Bundler::GemHelper.install_tasks` adds build, install, and release
- tasks (which are a secret?). They do basically the same thing, but don't talk to each other. I removed `Bundler::GemHelper.install_tasks`
+ tasks (which are a secret?). They do basically the same thing, but don't talk
+ to each other. Oh, and also  the latter doesn't work with multiple gems. I removed `Bundler::GemHelper.install_tasks`
  and added a custom install task.
 
 ### Useful references

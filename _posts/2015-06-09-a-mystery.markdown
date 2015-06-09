@@ -1,0 +1,59 @@
+---
+layout: post
+title: "A Mystery"
+date: 2015-06-09T14:38:34-04:00
+---
+So in `nmatrix_atlas.cpp`, I include `data/data.h`, which includes `ruby_object.h`, which includes `ruby_constants.h`, where we find this line:
+
+```
+extern VALUE cNMatrix;
+```
+
+This allows us to use a `VALUE` called `cNMatrix` in our code, but it doesn't allocate any memory for it or initalize it or define it. If we try to use it without
+defining it, we will get an error about an undefined reference. For the core nmatrix plugin, we have this line of code defining `cNMatrix` in `ruby_constants.cpp`:
+
+```
+VALUE cNMatrix;
+```
+
+But for building the plugin `nmatrix_atlas.so`, we don't build `ruby_constants.cpp`. So `cNMatrix` should be defined in `nmatrix.so`, but but not in `nmatrix_atlas.so`.
+We can check this with the command `nm` for listing symbols:
+
+```
+$ nm lib/nmatrix.so | grep cNMatrix
+000000000077c5c8 B cNMatrix
+$ nm lib/nmatrix_atlas.so | grep cNMatrix
+                 U cNMatrix
+```
+
+The U means undefined symbol. The B means "The symbol is in the uninitialized data section (known as BSS)" which is where zero-initialized global variables go.
+Everything as expected.  But we can open up `irb` and `require nmatrix/atlas`, which should require `nmatrix_atlas.so`, which should call `Init_nmatrix_atlas()`,
+where we find this line of code:
+
+```
+  rb_define_method(cNMatrix, "test_c_ext_return_2", (METHOD)nm_test, 0);
+```
+
+`cNMatrix` is never defined, so surely we should get an undefined reference error here. But somehow we don't! What's going on? At first I thought maybe we had accidentally loaded 
+`nmatrix.so` and were using the `cNMatrix` defined there. We can [check currently loaded libraries using `lsof`](https://superuser.com/questions/310199/see-currently-loaded-shared-objects-in-linux):
+
+```
+$ lsof | grep "irb.*nmatrix"
+irb [...] /home/will/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/extensions/x86_64-linux/2.2.0-static/nmatrix-atlas-0.1.0/nmatrix_atlas.so
+```
+
+So only `nmatrix_atlas.so` is loaded, not `nmatrix.so`. But it's the `nmatrix_atlas.so` from the installed gem, not from the local dir.
+In fact if we `require './lib/nmatrix_atlas.so'`, we get an undefined reference as expected.
+And actually there
+are three .so's in the installed gem:
+
+```
+$ nm ~/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/extensions/x86_64-linux/2.2.0-static/nmatrix-atlas-0.1.0/nmatrix_atlas.so | grep cNMatrix
+0000000000201048 B cNMatrix
+$ nm ~/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/gems/nmatrix-atlas-0.1.0/lib/nmatrix_atlas.so | grep cNMatrix
+                 U cNMatrix
+$ nm ~/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/gems/nmatrix-atlas-0.1.0/ext/nmatrix_atlas/nmatrix_atlas.so | grep cNMatrix
+                 U cNMatrix
+```
+
+What's going on? How did `cNMatrix` end up getting defined in one of these .so's?
