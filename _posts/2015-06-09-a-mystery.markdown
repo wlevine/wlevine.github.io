@@ -42,7 +42,7 @@ $ lsof | grep "irb.*nmatrix"
 irb [...] /home/will/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/extensions/x86_64-linux/2.2.0-static/nmatrix-atlas-0.1.0/nmatrix_atlas.so
 ```
 
-So only `nmatrix_atlas.so` is loaded, not `nmatrix.so`. But it's the `nmatrix_atlas.so` from the installed gem, not from the local dir.
+So only `nmatrix_atlas.so` is loaded, not `nmatrix.so`. But, looking at the path, we see it's the `nmatrix_atlas.so` from the installed gem, not from the local dir.
 In fact if we `require './lib/nmatrix_atlas.so'`, we get an undefined reference as expected.
 And actually there
 are three .so's in the installed gem:
@@ -56,10 +56,11 @@ $ nm ~/.rbenv/versions/2.2.2/lib/ruby/gems/2.2.0/gems/nmatrix-atlas-0.1.0/ext/nm
                  U cNMatrix
 ```
 
-What's going on? How did `cNMatrix` end up getting defined in one of these .so's? ARghh... It turns out that that this .so is left over from an old install.
-How did gem install manage to overwrite two of these `nmatrix_atlas.so`'s but not the one that actually matters? This is kind of annoying, I can't figure out why.
-It gets updated if I run gem uninstall before gem install. gem install -V (verbose) doesn't shed any light on the problem. I should look into this problem further
-at some point.
+What's going on? How did `cNMatrix` end up getting defined in one of these .so's, but not the other two? ARghh... It turns out that that this .so is left over from an old install.
+How did `gem install` manage to overwrite two of these `nmatrix_atlas.so`'s but not the one that actually matters? This is kind of annoying, I can't figure out why.
+It gets updated if I run gem uninstall before gem install. `gem install -V`
+(verbose) doesn't shed any light on the problem. I [filed a bug at rubygems](https://github.com/rubygems/rubygems/issues/1285),
+we'll see what their response is.
 
 OK, so now things work OK:
 
