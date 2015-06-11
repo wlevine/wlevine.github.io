@@ -14,19 +14,128 @@ Core gem is called nmatrix, plugin gems are called nmatrix-atlas,
 nmatrix-xxx, as per [these
 conventions](http://guides.rubygems.org/name-your-gem/).
 
-Directory structure:
-ext/nmatrix
-ext/nmatrix\_atlas
-lib/nmatrix.rb
-lib/nmatrix/atlas.rb
+Discuss common header files.
+
+Need to wrap code.
+
+### Repository directory structure
+
+```
+ext/nmatrix/ - common header files live here in addition to C files. How to
+use common header files?
+ext/nmatrix\_atlas/
+lib/nmatrix.rb - main file for nmatrix
+lib/nmatrix/ auxillary ruby files
+lib/nmatrix/atlas.rb main file for nmatrix-atlas, so the extension can be
+loaded with `require 'nmatrix/atlas'` again according
+to the convention.
 spec/
 spec/plugins/atlas/
+```
 
-So the extension can be loaded with `require 'nmatrix/atlas'` again according
-to the convention.
+### Plugin gemspecs
 
 First we need to make a gemspec for each gem: `nmatrix.gemspec`,
 `nmatrix-atlas.gemspec`. What to put in these gemspecs?
+
+For `nmatrix-atlas.gemspec`, it looks like a normal gemspec except for a few
+interesting things:
+
+```ruby
+lib = File.expand_path('../lib/', __FILE__)
+$:.unshift lib unless $:.include?(lib)
+
+require 'nmatrix/version'
+
+Gem::Specification.new do |gem|
+  gem.name = "nmatrix-atlas"
+  gem.version = NMatrix::VERSION::STRING #use the same version as the main gem
+
+  # [...] some boring stuff goes here
+
+  gem.files         = ["lib/nmatrix/atlas.rb"]
+  gem.files         += `git ls-files -- ext/nmatrix_atlas`.split("\n")
+  gem.files         += `git ls-files -- ext/nmatrix | grep ".h$"`.split("\n") #need nmatrix header files to compile
+  gem.test_files    = `git ls-files -- spec/plugins/atlas`.split("\n")
+  gem.extensions = ['ext/nmatrix_atlas/extconf.rb']
+  gem.require_paths = ["lib"]
+
+  gem.required_ruby_version = '>= 1.9'
+
+  gem.add_dependency 'nmatrix', NMatrix::VERSION::STRING
+end
+```
+
+The important thing is making sure we add all the needed files to `gem.files`:
+all the needed ruby files (here we have only one), all of the files from
+`ext/nmatrix_atlas` and the common header files that we will need to build
+the extension when the user runs `gem install`. Setting `gem.test_files`
+(doesn't actually do
+anything)[https://stackoverflow.com/questions/18871541/what-is-the-purpose-of-test-files-configuration-in-a-gemspec]
+from the perspective of RubyGems, but we will make use of it when setting up the
+spec task in our Rakefile.
+
+Then of course we need to make our plugin gem dependent on the core nmatrix gem.
+
+### Core gemspec
+
+The original post had a neat trick for adding all files to
+the main gem, except for those that were added to plugin gems, but it's a
+little more complicated that us since we have shared header files that we
+want to be installed with all gems:
+
+```ruby
+lib = File.expand_path('../lib/', __FILE__)
+$:.unshift lib unless $:.include?(lib)
+
+require 'nmatrix/version'
+
+#get files that are used by plugins rather than the main nmatrix gem
+plugin_files = []
+plugin_test_files = []
+Dir["nmatrix-*.gemspec"].each do |gemspec_file|
+  gemspec = eval(File.read(gemspec_file))
+  plugin_files += gemspec.files
+  plugin_test_files += gemspec.test_files
+end
+
+Gem::Specification.new do |gem|
+  gem.name = "nmatrix"
+  gem.version = NMatrix::VERSION::STRING
+
+  # [...] boring stuff goes here
+
+  gem.files         = `git ls-files`.split("\n") - plugin_files
+  gem.files         += `git ls-files -- ext/nmatrix`.split("\n") #need to explicitly add this, since some of these files are included in plugin_files
+  gem.files.uniq!
+  gem.test_files    = `git ls-files -- spec`.split("\n") - plugin_test_files
+  gem.extensions = ['ext/nmatrix/extconf.rb']
+  gem.require_paths = ["lib"]
+
+  gem.required_ruby_version = '>= 1.9'
+
+  # add ordinary dependencies here
+end
+```
+
+### Gemfile
+
+This is pretty much the same as in the original post:
+
+```ruby
+source 'https://rubygems.org'
+
+#main gemspec
+gemspec :name => 'nmatrix'
+
+#plugin gemspecs
+Dir['nmatrix-*.gemspec'].each do |gemspec_file|
+  plugin_name = gemspec_file.match(/(nmatrix-.*)\.gemspec/)[1]
+  gemspec(:name => plugin_name, :development_group => :plugin)
+end
+```
+
+### Rakefile
 
 The Rakefile is where most of the magic goes down. You can pass arguments to
 rake by calling the command `rake task arg1=val1`. This sets an environment
