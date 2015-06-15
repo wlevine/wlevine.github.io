@@ -86,7 +86,8 @@ void trapeze(int trapezer) { }
 According to this guy, it's a [better choice to override than specialize for
 functions](http://www.gotw.ca/publications/mill17.htm).
 
-We do a lot of function specialization in nmatrix:
+We do a lot of function specialization in nmatrix. Here's [one
+example](https://github.com/SciRuby/nmatrix/blob/e8a430545d06c51e59903fc7704c368c4d21ba1e/ext/nmatrix/math/gemm.h):
 
 ```C++
 template <typename DType>
@@ -102,12 +103,21 @@ inline void gemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA
 }
 ```
 
-Can probably change this? Is it necessary?
+We can change the latter to an overload just by removing the `template <>`,
+but then we need to change the [caller](https://github.com/SciRuby/nmatrix/blob/e8a430545d06c51e59903fc7704c368c4d21ba1e/ext/nmatrix/math.cpp#L513) from `gemm<DType>(...)`  to `gemm(...)`.
+After that things work okay. Should we do this?
 
 Since templates need to be defined in the header file, and multiple source
 files will include the same header, it is okay to link together multiple object
-files each with their own definition of the template (this means weak
-symbol?)? However we can only
-have one definition of a template specialization, so these should be defined in
-source files and only declared in headers? Unless of course the template
-specialization is an inline function.
+files each with a definition of the template. This means the function
+symbols are marked as weak
+symbols. However, it's not OK if these different definitions behave
+differently. When linking the files, if there are multiple weak symbols with
+the same name, the linker can just pick an arbitrary one.
+
+However, we can only
+have one definition of a function template specialization (these become
+normal strong symbols). So these should be defined in
+source files and only declared in headers. Unless of course the template
+specialization is an inline function, then no problem if it's defined in a
+header.
