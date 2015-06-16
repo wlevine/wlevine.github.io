@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Releasing multiple gems (with C extensions) from the same repository"
-date: 2015-06-15T20:36:11-04:00
+date: 2015-06-15T19:36:11-04:00
 ---
 Currently nmatrix relies on the ATLAS library, which can be a big pain to
 install.
