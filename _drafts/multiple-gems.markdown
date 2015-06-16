@@ -1,37 +1,63 @@
 ---
 layout: post
-title: "Multiple Gems"
+title: "Releasing multiple gems (with C extensions) from the same repository"
 ---
-Releasing multiple gems from the same repository.
+Currently nmatrix relies on the ATLAS library, which can be a big pain to
+install.
+We want people to be able to build and use nmatrix without having to install
+ATLAS, but at the same time allow those who do have ATLAS to use it as
+before. This means separating nmatrix into two gems: the core one `nmatrix`
+and the plugin `nmatrix-atlas`. Eventually there may be other nmatrix plugins
+`nmatrix-xxx` (see [ruby naming conventions](http://guides.rubygems.org/name-your-gem/)).
+We would like to develop both gems in the same repository so that
+development of the two gems will stay in sync.
 
-Maybe not totally finalized yet, will update if changes happen.
+I found a quite useful [blog post on the same
+subject](http://opensoul.org/2012/05/30/releasing-multiple-gems-from-one-repository/), 
+which is what this post is based on, however the nmatrix case is a bit more
+complicated since both the core gem and the plugin rely on C code.
 
-Based on this [blog post on the same
-subject](http://opensoul.org/2012/05/30/releasing-multiple-gems-from-one-repository/), but more complicated due
-to C extensions, rspec.
-
-Core gem is called nmatrix, plugin gems are called nmatrix-atlas,
-nmatrix-xxx, as per [these
-conventions](http://guides.rubygems.org/name-your-gem/).
-
-Discuss common header files.
-
-Need to wrap code.
+The design is maybe not totally finalized yet, I will update if changes happen.
 
 ### Repository directory structure
 
 ```
-ext/nmatrix/ - common header files live here in addition to C files. How to
-use common header files?
-ext/nmatrix\_atlas/
-lib/nmatrix.rb - main file for nmatrix
-lib/nmatrix/ auxillary ruby files
-lib/nmatrix/atlas.rb main file for nmatrix-atlas, so the extension can be
-loaded with `require 'nmatrix/atlas'` again according
-to the convention.
-spec/
-spec/plugins/atlas/
+ext/nmatrix/          nmatrix C extension
+ext/nmatrix_atlas/    nmatrix-atlas C extension
+lib/nmatrix.rb        main file for nmatrix
+lib/nmatrix/          auxillary ruby files
+lib/nmatrix/atlas.rb  main file for nmatrix-atlas, so the extension can be
+                        loaded with `require 'nmatrix/atlas'` as required
+                        by the naming convention
+spec/                 shared tests, tests for nmatrix, auxillary files for tests
+spec/plugins/atlas/   tests for nmatrix-atlas
 ```
+
+Common header files which are needed by both C extensions are located in
+`ext/nmatrix`. How should `nmatrix_atlas` get access to these common header
+files? I thought of three ways to do this:
+
+1. Install the nmatrix gem and use the installed header files to build
+nmatrix-atlas. This is a bad
+solution because it makes the build process clunky for developers.
+You would have to
+`gem install nmatrix` before you could even build nmatrix-atlas.
+
+2. Just add `ext/nmatrix` to the include path for the nmatrix-atlas
+build process, and then package all the necessary headers with the
+nmatrix-atlas gem. This has the downside that you will end up
+packaging identical header files twice in two (or more) different
+gems.
+
+3. Deal with the issue differently depending on whether we are
+building in a development environment or building during a gem
+installation. In the first case, use the headers from `ext/nmatrix`
+in the tree, in the second case use the headers from the installed
+nmatrix gem. This would mean that the headers would only need to be
+packaged in one place, but it would add complexity to the build
+process.
+
+I chose to go with option 2.
 
 ### Plugin gemspecs
 
@@ -68,10 +94,9 @@ end
 
 The important thing is making sure we add all the needed files to `gem.files`:
 all the needed ruby files (here we have only one), all of the files from
-`ext/nmatrix_atlas` and the common header files that we will need to build
+`ext/nmatrix_atlas`, and the common header files that we will need to build
 the extension when the user runs `gem install`. Setting `gem.test_files`
-(doesn't actually do
-anything)[https://stackoverflow.com/questions/18871541/what-is-the-purpose-of-test-files-configuration-in-a-gemspec]
+[doesn't actually do anything](https://stackoverflow.com/questions/18871541/what-is-the-purpose-of-test-files-configuration-in-a-gemspec)
 from the perspective of RubyGems, but we will make use of it when setting up the
 spec task in our Rakefile.
 
@@ -81,7 +106,7 @@ Then of course we need to make our plugin gem dependent on the core nmatrix gem.
 
 The original post had a neat trick for adding all files to
 the main gem, except for those that were added to plugin gems, but it's a
-little more complicated that us since we have shared header files that we
+little more complicated for us since we have shared header files that we
 want to be installed with all gems:
 
 ```ruby
@@ -105,8 +130,11 @@ Gem::Specification.new do |gem|
 
   # [...] boring stuff goes here
 
+  #exclude plugin_files
   gem.files         = `git ls-files`.split("\n") - plugin_files
-  gem.files         += `git ls-files -- ext/nmatrix`.split("\n") #need to explicitly add this, since some of these files are included in plugin_files
+  #need to explicitly re-add all files in ext/nmatrix, since some of them
+  #are included in plugin_files
+  gem.files         += `git ls-files -- ext/nmatrix`.split("\n")
   gem.files.uniq!
   gem.test_files    = `git ls-files -- spec`.split("\n") - plugin_test_files
   gem.extensions = ['ext/nmatrix/extconf.rb']
@@ -137,10 +165,15 @@ end
 
 ### Rakefile
 
-The Rakefile is where most of the magic goes down. You can pass arguments to
+The Rakefile is where most of the magic goes down.
+
+I think in the original post the author was assuming that a developer would
+always want to build all the plugins. But for us since `nmatrix-atlas` has a
+nasty dependency, we don't want to force everyone to build it. So we pass an
+argument to rake to tell it what plugins we want. You can pass arguments to
 rake by calling the command `rake task arg1=val1`. This sets an environment
 variable `arg1` that you can access from within rake. I use the
-`nmatrix_plugin` env variable to specify which plugins rake should
+`nmatrix_plugins` env variable to specify which plugins rake should
 build/package/test/whatever:
 
 ```ruby
@@ -209,8 +242,11 @@ task :install => :package do
 end
 ```
 
-(note that [`Bundler::GemHelper.install_tasks` does not work with multiple
-gems in the same directory.](https://github.com/bundler/bundler/issues/2971))
+Note that [`Bundler::GemHelper.install_tasks` does not work with multiple
+gems in the same directory](https://github.com/bundler/bundler/issues/2971).
 
 The `spec` task for using RSpec was a bit more complicated so I think I'll
 save that for another post.
+
+I still haven't tried this with travis-cl, maybe that will require a little
+bit more work.
