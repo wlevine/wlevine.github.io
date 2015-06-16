@@ -203,7 +203,9 @@ gemspecs.map! { |gemspec| eval(IO.read(gemspec)) }
 So now `gemspecs` is an array of all the gemspecs that we want rake to deal
 with.
 
-So we create a `Rake::ExtensionTask` for each C extension that we have:
+So we create a `Rake::ExtensionTask`
+for each C extension that we have, which makes a single `compile` task
+that compiles all of the extensions:
 
 ```ruby
 require 'rake'
@@ -223,7 +225,8 @@ gemspecs.each do |gemspec|
 end
 ```
 
-and a `Gem::PackageTask` for each gemspec:
+and a `Gem::PackageTask` for each gemspec, which gives us `package` and
+`repackage` tasks:
 
 ```ruby
 gemspecs.each do |gemspec|

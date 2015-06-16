@@ -10,7 +10,7 @@ Work on my [atlas\_plugin branch](https://github.com/wlevine/nmatrix/tree/atlas_
  * Set up a framework to build, test, package, and install multiple gems (with C
  extensions) from the nmatrix repository. This ended up being a lot more
  complicated than described in the reference below, and deserves a blog post 
- of its own, maybe after things are more finalized.
+ of its own, [now available here]({% post_url 2015-06-15-releasing-multiple-gems-with-c-extensions-from-the-same-repository %}).
  * Removed all external dependencies (CBLAS, CLAPACK) from the core nmatrix
  gem
  * Created a new gem nmatrix-atlas which should eventually implement all the
