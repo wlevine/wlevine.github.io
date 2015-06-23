@@ -249,8 +249,8 @@ end
 Note that [`Bundler::GemHelper.install_tasks` does not work with multiple
 gems in the same directory](https://github.com/bundler/bundler/issues/2971).
 
-The `spec` task for using RSpec was a bit more complicated so I think I'll
-save that for another post.
+The `spec` task for using RSpec was a bit more complicated so I split that
+off into a [different blog post]({% post_url 2015-06-22-rspec-tasks-for-nmatrix-plugins %}).
 
 I still haven't tried this with travis-cl, maybe that will require a little
 bit more work.
