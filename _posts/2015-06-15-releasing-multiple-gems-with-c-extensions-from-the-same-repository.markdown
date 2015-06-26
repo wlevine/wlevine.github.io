@@ -3,6 +3,8 @@ layout: post
 title: "Releasing multiple gems (with C extensions) from the same repository"
 date: 2015-06-15T19:36:11-04:00
 ---
+UPDATE 2015-06-26: Change gem.files and gem.test_files in gemspecs
+
 Currently nmatrix relies on the ATLAS library, which can be a big pain to
 install.
 We want people to be able to build and use nmatrix without having to install
@@ -83,7 +85,9 @@ Gem::Specification.new do |gem|
   gem.files         = ["lib/nmatrix/atlas.rb"]
   gem.files         += `git ls-files -- ext/nmatrix_atlas`.split("\n")
   gem.files         += `git ls-files -- ext/nmatrix | grep ".h$"`.split("\n") #need nmatrix header files to compile
-  gem.test_files    = `git ls-files -- spec/plugins/atlas`.split("\n")
+  gem.test_files    = `git ls-files -- spec`.split("\n")
+  gem.test_files    -= `git ls-files -- spec/plugins`.split("\n")
+  gem.test_files    += `git ls-files -- spec/plugins/atlas`.split("\n")
   gem.extensions = ['ext/nmatrix_atlas/extconf.rb']
   gem.require_paths = ["lib"]
 
@@ -118,12 +122,11 @@ require 'nmatrix/version'
 
 #get files that are used by plugins rather than the main nmatrix gem
 plugin_files = []
-plugin_test_files = []
 Dir["nmatrix-*.gemspec"].each do |gemspec_file|
   gemspec = eval(File.read(gemspec_file))
   plugin_files += gemspec.files
-  plugin_test_files += gemspec.test_files
 end
+plugin_lib_files = plugin_files.select { |file| file.match(/^lib\//) }
 
 Gem::Specification.new do |gem|
   gem.name = "nmatrix"
@@ -131,13 +134,11 @@ Gem::Specification.new do |gem|
 
   # [...] boring stuff goes here
 
-  #exclude plugin_files
-  gem.files         = `git ls-files`.split("\n") - plugin_files
-  #need to explicitly re-add all files in ext/nmatrix, since some of them
-  #are included in plugin_files
-  gem.files         += `git ls-files -- ext/nmatrix`.split("\n")
-  gem.files.uniq!
-  gem.test_files    = `git ls-files -- spec`.split("\n") - plugin_test_files
+  gem.files         = `git ls-files -- ext/nmatrix`.split("\n")
+  gem.files         += `git ls-files -- lib`.split("\n")
+  gem.files         -= plugin_lib_files
+  gem.test_files    = `git ls-files -- spec`.split("\n")
+  gem.test_files    -= `git ls-files -- spec/plugins`.split("\n")
   gem.extensions = ['ext/nmatrix/extconf.rb']
   gem.require_paths = ["lib"]
 

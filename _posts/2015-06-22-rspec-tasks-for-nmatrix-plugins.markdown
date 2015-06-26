@@ -3,11 +3,13 @@ layout: post
 title: "RSpec tasks for nmatrix plugins"
 date: 2015-06-22T19:46:57-04:00
 ---
+UPDATE 2015-06-26: Now re-tests all specs when testing plugins
+
 We want to be able to test multiple implementations of the same function. For
 example, nmatrix has an internal implementation of `getrf` (used for
 calculating the determinant, among other things), but
 nmatrix-atlas overrides this with its own version of `getrf` which uses
-the ATLAS implementation. We want to test both of these. A couple of issues:
+the ATLAS implementation. We want to test both of these.
 
 There's no way to tell rspec: "run this bunch of specs, then `require
 "nmatrix/atlas"`, then run this other bunch of specs". It loads all the spec
@@ -49,7 +51,20 @@ task will fail immediately and the most recent messages on the console will
 give you the details about the error. It will not continue with the next
 rspec invocation if the previous one fails.
 
-The other issue is that we'd like to use the exact same specs to test
+So the first invocation (testing the core nmatrix plugin) includes all the
+files in `spec/` excluding those in `spec/plugins/`, and the second invocation
+(testing the nmatrix-atlas plugin)
+includes all of the files from the first run plus the files in
+`spec/plugins/atlas/` where `atlas_spec.rb` is located. In `atlas_spec.rb` we
+`require 'nmatrix/atlas'`, so that the second time all tests are run with the
+nmatrix-atlas plugin active.
+
+Originally I planned to isolate all the specs that could possibly behave
+differently with nmatrix-atlas, and run only these tests when testing
+nmatrix-atlas. I eventually decided that it was better just to re-test
+everything.
+
+Another issue that could arise is if we'd like to use the exact same specs to test
 equivalent functions. This is easily solved with [RSpec's shared examples](https://www.relishapp.com/rspec/rspec-core/docs/example-groups/shared-examples).
 So we create a file `spec/lapack_shared.rb` (since it doesn't end in
 `_spec.rb` it won't be included by our rake spec task):
@@ -73,4 +88,6 @@ end
 ```
 
 And something similar in `spec/lapack_spec.rb` except without the `require
-"./lib/nmatrix/atlas"` line.
+"./lib/nmatrix/atlas"` line. I did this before, but now that the
+nmatrix-atlas tests runs the entire nmatrix test suite, it's not necessary
+for the moment.
