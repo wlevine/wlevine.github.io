@@ -95,6 +95,9 @@ This shows that we can correctly predict about 80% of action movies, if we are w
 
 What words are most important for determining if a movie is an action movie or not?
 
+<img src="{{ root_url }}/source/images/wordcloud_action.png" />
+
+<!--
 1. weapon (0.076)
 1. explodes (0.046)
 1. aim (0.046)
@@ -120,6 +123,7 @@ What words are most important for determining if a movie is an action movie or n
 1. helicopter (0.019)
 1. control (0.019)
 1. scan (0.018)
+-->
 
 
 ### What about comedy?
@@ -190,16 +194,16 @@ These movies are the most "Factor 1"
 
 These are the least "Factor 1":
 
-1. Pearl Harbor (2001)   -0.041965
-1. Independence Day (a.k.a. ID4) (1996)  -0.040441
-1. Entrapment (1999)   -0.038511
-1. Wild Wild West (1999)   -0.035819
-1. Air Force One (1997)  -0.034829
-1. Judge Dredd (1995)  -0.033260
-1. Cliffhanger (1993)  -0.032739
-1. Swordfish (2001)  -0.032206
-1. Runaway Bride (1999)  -0.032128
-1. Rock, The (1996)  -0.032044
+1. Pearl Harbor
+1. Independence Day
+1. Entrapment
+1. Wild Wild West
+1. Air Force One
+1. Judge Dredd
+1. Cliffhanger
+1. Swordfish
+1. Runaway Bride
+1. Rock, The
 
 <!--
   title   X1
@@ -215,7 +219,7 @@ These are the least "Factor 1":
   632   Rock, The (1996)  -0.032044
 -->
 
-It looks like Factor 1 means....
+It looks like Factor 1 mean something like straightforward vs. dark/devious (cookie-cutter vs. unorthodox).
 
 What words go along with this?
 
@@ -316,6 +320,8 @@ Least:
 1. American Psycho
 1. Reservoir Dogs
 
+Factor 2 seems to run along a scale from upbeat movies to disturbing movies.
+
 <!--
  	title 	X2
 536 	Natural Born Killers (1994) 	-0.075095
@@ -384,6 +390,10 @@ Words:
  ('yuppie', -0.00088256272736631078)]
 
 ### How does it do
+
+So we can predict factors based on movie scripts. But what we really want to do is to predict how
+each user will rate a given movie. We can do this by using our predicted factors together with
+the users 
 
 RMSES:
 Predicting all ratings as the global average: 1.006
