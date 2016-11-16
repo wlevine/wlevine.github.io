@@ -134,6 +134,9 @@ Confusion matrix:
 array([[757,   4],
        [ 48,  18]])
 
+<img src="{{ root_url }}/source/images/wordcloud_comedy.png" />
+
+<!--
 1. guy (0.116)
 1. really (0.077)
 1. hey (0.074)
@@ -154,6 +157,7 @@ array([[757,   4],
 1. mime (0.027)
 1. dana (0.023)
 1. psychotic (0.022)
+-->
 
 <img src="{{ root_url }}/source/images/roc_curve_comedy.png" />
 
@@ -225,6 +229,7 @@ What words go along with this?
 
 Words:
 
+<!--
 [('talkin', 0.00049941776058523384),
  ('anybody', 0.00023369200675495399),
  ('cigarette', 0.00017326107800195019),
@@ -275,6 +280,7 @@ Words:
  ('laptop', -0.00039806332550483992),
  ('perfect', -0.00047072969810565713),
  ('fireball', -0.0010288025497466071)]
+ -->
 
 Factor 2:
 
@@ -336,8 +342,13 @@ Factor 2 seems to run along a scale from upbeat movies to disturbing movies.
 624 	Reservoir Dogs (1992) 	-0.050662
 -->
 
+The factors may be interesting on their own, but can we associate them with the words in the script.
+
+<img src="{{ root_url }}/source/images/factor4.png" />
+
 
 Words:
+<!--
 [('spell', 0.00096135956133532811),
  ('marry', 0.00074032471136620118),
  ('philadelphia', 0.00031034575519908888),
@@ -388,6 +399,7 @@ Words:
  ('flesh', -0.0003170184607205796),
  ('pussy', -0.00060992470408107781),
  ('yuppie', -0.00088256272736631078)]
+ -->
 
 ### How does it do
 
