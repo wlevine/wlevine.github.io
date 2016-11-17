@@ -31,7 +31,7 @@ There also 721 non-action movies, including:
 
 For each of these 827 movies, we want to build a model that uses the script to correctly predict if they are action movies.
 The exciting part is that then we can apply the same model to new movies that we don't know anything about to figure
-out if they should be called action movies
+out if they should be called action movies.
 
 ### Bag of words
 
@@ -40,31 +40,49 @@ We do not care about the order of words at all.
 
 In other words, these three sentences are all equivalent according to bag of words:
 
+* Houston, we have a problem.
+* We have a problem, Houston.
+* A we Houston problem have.
 
 
 Although we lose a lot of information about the movie by doing this, it makes it easier for the computer to analyze.
 
 ### Random forest
 
-Random forest is a variant of the basic decision tree method. A single decision tree looks something like this:
 
+[Random forests](https://en.wikipedia.org/wiki/Random_forest) are a variant of the basic decision tree method.
+The following is a simplified example of what a single decision tree would look like using bag-of-words:
 
-A random forest consists of a collection of many decision trees, with certain blah...
+<img src="{{ root_url }}/source/images/decision_tree.png" />
+
+A random forest consists of a collection of many decision trees (here we use up to a thousand decision trees in a single model).
+Each tree is random in that the words used both the words used to distinguish and the movies used to train the tree are
+randomly selected.
 
 The computer learns the correct decision trees by examining the training dataset (the 827 movie scripts for which we have
 both scripts and action tags available).
 
 ### Results
 
-Build a model using random forest and bag of words (detail)
+The computer reads in all 827 movie scripts, then performs lemmatization on each word, which mean that each word is
+transformed to the headword you would find in a dictionary (for example, "explodes" is transformed into "explode"
+and "explosions" is transformed into "explosion").
 
-We can use cross-validated prediction scores to estimate how accurate the model will be on data.
+After lemmatization, we find the 10,000 most common words found across all the movie scripts. These words will be used
+as predictors.
 
-The accuracy score is 92%. Sounds pretty good. But wait! Only 13% of our movies were action movies to begin with.
+At this point, every movie has been tagged by a human as either action or non-action. We also have 10,000 predictors, which
+are just counts of how many times each word has appeared in the script. We train a random forest model to predict the
+action tag based on the word counts.
+
+We can use [cross-validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) to estimate how accurate the model will be on data that it hasn't seen yet.
+
+The cross-validated accuracy is 92%.
+This means that if we get a new movie where we're not sure if it's an action movie,
+we will corrent label it 92% of the time.
+92% sounds pretty high. But wait! Only 13% of our movies were action movies to begin with.
 That means that if we predicted that every movie was non-action, we would already have 87% accuracy.
 Let's look at the cross-validated results in more detail:
-
-(make this into a table)
 
 * Accuracy rate for movies that are truly non-action: 99% (712/721)
 * Accuracy rate for movies that are truly action: 46% (49/106)
@@ -84,8 +102,8 @@ Non-action:
 * Gandhi: <span style="color: green">not-action</span>
 * Duck Soup: <span style="color: green">not-action</span>
 
-Is there a way to correctly classify more action movies? Only if we are willing to misclassify more non-action movies.
-This is shown on a ROC curve:
+Is there a way to correctly classify more action movies? Yes, but only if we are willing to misclassify more non-action movies.
+This trade-off is shown on a ROC curve:
 
 <img src="{{ root_url }}/source/images/roc_curve_action.png" />
 
@@ -128,13 +146,22 @@ What words are most important for determining if a movie is an action movie or n
 
 ### What about comedy?
 
-Only 8% comedy of total movies.
+The bag-of-words model is not perfect at predicting action movies, but it does recognize salient features (words
+having to do with violence and fast motion) that help identify action movies. It turns out that it is not
+equally good at predicting comedies, which make up 8% of our dataset.
 
-Confusion matrix:
-array([[757,   4],
-       [ 48,  18]])
+<img src="{{ root_url }}/source/images/roc_curve_comedy.png" />
+
+If we want to correctly predict 80% of comedies, we will have end up mispredicting about 40% of non-comedies.
+Why is this so bad? Computers aren't good at telling jokes. These are the words most predictive of comedy:
 
 <img src="{{ root_url }}/source/images/wordcloud_comedy.png" />
+
+Not very funny, huh? I guess the jokes are hidden in the order of the words, which bag-of-words explicitly ignores,
+rather than in the words themselves. Also, perhaps the genre of comedy is broader than action. The words that identify
+a romantic comedy might be different than the words that identify a dark comedy.
+
+So it turns out that bag-of-words is better at identifying certain aspects of movies than others.
 
 <!--
 1. guy (0.116)
@@ -159,11 +186,19 @@ array([[757,   4],
 1. psychotic (0.022)
 -->
 
-<img src="{{ root_url }}/source/images/roc_curve_comedy.png" />
 
 ## Part 2: Predict rating for many users based on scripts
 
 ### Collaborative filtering
+
+If we're in the business of recommending movie, why not go all out and make personalized predictions for the whole
+world, predicting how much each person will like every movie ever made. One technique for doing this is collaborative filtering.
+
+Collaborative filtering uses 
+
+Cold-start problem.
+
+The MovieLens dataset.
 
 ### The factors
 The most important factors come first: 
@@ -348,6 +383,7 @@ The factors may be interesting on their own, but can we associate them with the 
 
 
 Words:
+
 <!--
 [('spell', 0.00096135956133532811),
  ('marry', 0.00074032471136620118),
