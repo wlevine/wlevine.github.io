@@ -13,10 +13,10 @@ Maybe my friend wants to watch an action movie?
 
 <img src="{{ root_url }}/source/images/wolverine.gif" />
 
-If I have a script, how can I tell if it's an action movie?
+If I have the script for a movie, how can I tell if it's an action movie or not?
 
-I collected 827 scripts from IMSDb (link). Then for these same 827 movies, I checked to see if they were tagged
-as 'action' movies on MovieLens (more details). I end up with 106 action movies, including:
+First, I collected 825 scripts from [IMSDb](http://www.imsdb.com/). Then for these same 825 movies, I checked to see if they were tagged
+as 'action' movies on [MovieLens](https://movielens.org/). I end up with 106 action movies, including:
 
 * Terminator
 * Ninja Assassin
@@ -29,43 +29,52 @@ There also 721 non-action movies, including:
 * Gandhi
 * Duck Soup
 
-For each of these 827 movies, we want to build a model that uses the script to correctly predict if they are action movies.
-The exciting part is that then we can apply the same model to new movies that we don't know anything about to figure
+Using these 825 movies and their scripts, we want to build a model that correctly predicts whether or not a
+movie is an action movie, based on its script.
+For these 825 movies, we already know the answer, but
+the exciting part is that then we can apply the same model to new movies that we don't know anything about to figure
 out if they should be called action movies.
+
+So how do we do this?
+
+<!-- ZZZ note this isn't that useful -->
 
 ### Bag of words
 
-Bag of words means that we only care about the words that appear in the script and the number of time each word appear.
+The [bag-of-words model](https://en.wikipedia.org/wiki/Bag-of-words_model) is a trick that helps computers interpret written text.
+We will use this model for our analysis of movie scripts.
+Bag-of-words means that we only care about the frequency of words in the text.
 We do not care about the order of words at all.
 
-In other words, these three sentences are all equivalent according to bag of words:
+In other words, these three sentences are all equivalent according to the bag-of-words models:
 
 * Houston, we have a problem.
 * We have a problem, Houston.
 * A we Houston problem have.
 
-
 Although we lose a lot of information about the movie by doing this, it makes it easier for the computer to analyze.
 
 ### Random forest
 
+We will use the word frequencies from the bag-of-words model as features in a random forest classifier.
 
 [Random forests](https://en.wikipedia.org/wiki/Random_forest) are a variant of the basic decision tree method.
 The following is a simplified example of what a single decision tree would look like using bag-of-words:
 
 <img src="{{ root_url }}/source/images/decision_tree.png" />
 
-A random forest consists of a collection of many decision trees (here we use up to a thousand decision trees in a single model).
+A random forest consists of a collection of many such decision trees (here we use up to a thousand decision trees in a single model).
 Each tree is random in that the words used both the words used to distinguish and the movies used to train the tree are
 randomly selected.
 
-The computer learns the correct decision trees by examining the training dataset (the 827 movie scripts for which we have
+The computer learns the correct decision trees by examining the training dataset (the 825 movie scripts for which we have
 both scripts and action tags available).
 
 ### Results
 
-The computer reads in all 827 movie scripts, then performs lemmatization on each word, which mean that each word is
-transformed to the headword you would find in a dictionary (for example, "explodes" is transformed into "explode"
+The computer reads in all 825 movie scripts, then performs [lemmatization](https://en.wikipedia.org/wiki/Lemmatisation)
+on each word, which mean that each word is
+transformed to a word you would find at the beginning of dictionary entry (for example, "explodes" is transformed into "explode"
 and "explosions" is transformed into "explosion").
 
 After lemmatization, we find the 10,000 most common words found across all the movie scripts. These words will be used
@@ -75,11 +84,13 @@ At this point, every movie has been tagged by a human as either action or non-ac
 are just counts of how many times each word has appeared in the script. We train a random forest model to predict the
 action tag based on the word counts.
 
-We can use [cross-validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) to estimate how accurate the model will be on data that it hasn't seen yet.
+We can use [cross-validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) to estimate how
+accurate the model will be on data that it hasn't seen yet. Cross-validation ensures that we don't cheat by using
+information about the movie we are predicting to make a prediction about itself.
 
 The cross-validated accuracy is 92%.
 This means that if we get a new movie where we're not sure if it's an action movie,
-we will corrent label it 92% of the time.
+we will label it correctly 92% of the time.
 92% sounds pretty high. But wait! Only 13% of our movies were action movies to begin with.
 That means that if we predicted that every movie was non-action, we would already have 87% accuracy.
 Let's look at the cross-validated results in more detail:
@@ -153,11 +164,13 @@ equally good at predicting comedies, which make up 8% of our dataset.
 <img src="{{ root_url }}/source/images/roc_curve_comedy.png" />
 
 If we want to correctly predict 80% of comedies, we will have end up mispredicting about 40% of non-comedies.
-Why is this so bad? Computers aren't good at telling jokes. These are the words most predictive of comedy:
+Why is this so bad? Computers just aren't good at jokes.
+
+These are the words most predictive of comedy:
 
 <img src="{{ root_url }}/source/images/wordcloud_comedy.png" />
 
-Not very funny, huh? I guess the jokes are hidden in the order of the words, which bag-of-words explicitly ignores,
+Not very funny, huh? Maybe the jokes are hidden in the order of the words, which bag-of-words explicitly ignores,
 rather than in the words themselves. Also, perhaps the genre of comedy is broader than action. The words that identify
 a romantic comedy might be different than the words that identify a dark comedy.
 
@@ -191,21 +204,40 @@ So it turns out that bag-of-words is better at identifying certain aspects of mo
 
 ### Collaborative filtering
 
-If we're in the business of recommending movie, why not go all out and make personalized predictions for the whole
+If we're in the business of recommending movies, why not go all out and make personalized predictions for the whole
 world, predicting how much each person will like every movie ever made. One technique for doing this is collaborative filtering.
 
-Collaborative filtering uses 
+Collaborative filtering refers to methods that use users with similar tastes and uses them to make predictions.
+If people who like Inception tend to also rate
+the Matrix highly, and Leo likes Inception, it's reasonable to predict that Leo will also rate the Matrix highly.
 
-Cold-start problem.
+[MovieLens](https://movielens.org/) provides a [dataset of 20 million movie ratings](http://grouplens.org/datasets/movielens/)
+of 27,000 movies by 138,000 users, so this is a great dataset for implementing a collaborative-filtering algorithm.
 
-The MovieLens dataset.
+
+So what does this have to do with scripts?
+Collaborative filtering has the weakness that it depends on existing ratings. If a new movie comes out that
+that few people have rated, collaborative filtering will have a hard time. This is known as the cold-start problem.
+We want to see if having
+access to the script will help with this problem. Can the words in the script help predict the factors for each movie?
 
 ### The factors
-The most important factors come first: 
 
-Let's look at Factor 1.
+One algorithm for doing collaborative-filtering tries to discovers a certain
+number of factors that characterize people's taste in movies.
+Both users and movies are assigned the factors ratings, one for each factor, which are inferred by their known
+ratings.
+Users are predicted to like a movie if their factor values align. So if *Anchorman* has high "factor 1" and low "factor 2",
+and Jim also has high "factor 1" and low "factor 2", then we predict that Jim will rate *Anchorman* highly.
+While if Jules has low factor 1 and high factor 2, we predict that he will not like *Anchorman*.
+This
+is encoded in matrices as follows:
 
-These movies are the most "Factor 1"
+<img src="{{ root_url }}/source/images/matrix_stuff.png" />
+
+To make this a little more concrete, let's look at the factors found in the MovieLens rating dataset.
+
+The factors are ordered by importance, so we start by looking at Factor 1. These movies have the highest Factor 1 value:
 
 1. Taxi Driver
 1. Fargo
@@ -231,7 +263,7 @@ These movies are the most "Factor 1"
 138 	Brazil (1985) 	0.044533
 -->
 
-These are the least "Factor 1":
+And these are the movies with the most negative Factor 1 value:
 
 1. Pearl Harbor
 1. Independence Day
@@ -258,70 +290,13 @@ These are the least "Factor 1":
   632   Rock, The (1996)  -0.032044
 -->
 
-It looks like Factor 1 mean something like straightforward vs. dark/devious (cookie-cutter vs. unorthodox).
+These factor values are determined by the computer solely by looking at users' ratings of the movie and not
+knowing anything about the content of the movie.
+However, it looks like the computer has "discovered" some property of movies that we
+corresponds to what we might call unorthdox (high factor 1) vs. straightforward (low factor 1).
 
-What words go along with this?
 
-Words:
-
-<!--
-[('talkin', 0.00049941776058523384),
- ('anybody', 0.00023369200675495399),
- ('cigarette', 0.00017326107800195019),
- ('heard', 0.00014552169346077515),
- ('actor', 0.00014063436092495967),
- ('drink', 0.000132289254922266),
- ('sit', 6.8177650411176707e-05),
- ('people', 4.901241018706896e-05),
- ('film', 3.9650797512843262e-05),
- ('yeah', 3.0500491697645371e-05),
- ('voice', 1.3952571159930322e-05),
- ('don', 1.1400841228266626e-05),
- ('shot', 4.8403445469470943e-06),
- ('rush', -5.2477076828189414e-07),
- ('telephone', -2.4199103840131539e-06),
- ('monitor', -4.3746852922391439e-06),
- ('know', -4.7065997756649299e-06),
- ('data', -1.3741748686698268e-05),
- ('eye', -1.5390077649593586e-05),
- ('air', -2.210105908904655e-05),
- ('race', -2.4963317757960597e-05),
- ('catch', -2.6498894121412041e-05),
- ('beat', -3.8415830373639563e-05),
- ('drop', -4.9557849293988835e-05),
- ('cell', -6.1547752890865048e-05),
- ('pilot', -6.8315450340073228e-05),
- ('grab', -6.9319411892041245e-05),
- ('leap', -6.9691463100047575e-05),
- ('dive', -7.1194759732302673e-05),
- ('tumble', -7.3387405546546412e-05),
- ('breath', -7.9292930229728559e-05),
- ('rip', -7.9554236775907655e-05),
- ('tech', -8.086076076897151e-05),
- ('team', -8.3656189451853768e-05),
- ('video', -8.4836321142913652e-05),
- ('computer', -0.0001176391203037616),
- ('fly', -0.0001194948753814878),
- ('launch', -0.00018509962592946043),
- ('save', -0.0001919815705980868),
- ('hears', -0.00020477116614011571),
- ('spark', -0.00020489533999584544),
- ('whirl', -0.00021541896805040448),
- ('stun', -0.00022648888264348188),
- ('system', -0.0002393984665033794),
- ('wham', -0.00032399389166426869),
- ('chute', -0.00034764058460298871),
- ('realize', -0.00037926498798270209),
- ('laptop', -0.00039806332550483992),
- ('perfect', -0.00047072969810565713),
- ('fireball', -0.0010288025497466071)]
- -->
-
-Factor 2:
-
-Movies:
-
-Most:
+Just for fun, let's look at factor 2 also. These are the most factor 2 movies:
 
 1. Sleepless in Seattle
 1. Shakespeare in Love
@@ -348,7 +323,7 @@ Most:
 46 	American President, The (1995) 	0.051890
 -->
 
-Least:
+And the least:
 
 1. Natural Born Killers
 1. Fight Club
@@ -361,7 +336,8 @@ Least:
 1. American Psycho
 1. Reservoir Dogs
 
-Factor 2 seems to run along a scale from upbeat movies to disturbing movies.
+The computer is picking up on something that seems to correspond to the
+distinction between upbeat movies (high factor 2) and disturbing movies (low factor 2).
 
 <!--
  	title 	X2
@@ -377,72 +353,70 @@ Factor 2 seems to run along a scale from upbeat movies to disturbing movies.
 624 	Reservoir Dogs (1992) 	-0.050662
 -->
 
-The factors may be interesting on their own, but can we associate them with the words in the script.
+### Predicting factors from scripts
+
+The factors may be interesting on their own, but can we associate them with the words in the script. It turns out that,
+just like with genres, some factors are easier to predict than other. Factor 4 is an interesting case:
 
 <img src="{{ root_url }}/source/images/factor4.png" />
 
-
-Words:
-
-<!--
-[('spell', 0.00096135956133532811),
- ('marry', 0.00074032471136620118),
- ('philadelphia', 0.00031034575519908888),
- ('tail', 0.00020167067958881351),
- ('thank', 0.00013952040909696132),
- ('potter', 0.00013335462886857445),
- ('word', 0.00011382600527726387),
- ('wait', 4.309378828938053e-05),
- ('nod', 2.055169436982447e-05),
- ('come', 1.1165858541793294e-05),
- ('ask', 1.0466835403040762e-05),
- ('oh', 2.8686617577435966e-07),
- ('hey', 1.646471691640384e-07),
- ('bitch', -0.0),
- ('say', 0.0),
- ('potion', 0.0),
- ('personal', 0.0),
- ('sir', 0.0),
- ('majesty', 0.0),
- ('ll', 0.0),
- ('broom', 0.0),
- ('hand', -0.0),
- ('face', -0.0),
- ('day', 0.0),
- ('mayhem', -0.0),
- ('excuse', 0.0),
- ('wizard', 0.0),
- ('int', 0.0),
- ('door', -0.0),
- ('human', -0.0),
- ('box', 0.0),
- ('shit', -0.0),
- ('clothes', 0.0),
- ('arm', -0.0),
- ('sits', 0.0),
- ('mouth', -0.0),
- ('gun', -1.3426769121932355e-05),
- ('fucker', -2.5624810879245302e-05),
- ('fuckin', -3.6544302144186008e-05),
- ('blood', -5.1755864293955783e-05),
- ('body', -6.263413035288846e-05),
- ('fuck', -0.00010149164624789543),
- ('lime', -0.00013607722801156342),
- ('scream', -0.0001363062747765564),
- ('frame', -0.00015894790540263342),
- ('motherfucker', -0.00024998930142487957),
- ('denny', -0.00027907419343772182),
- ('flesh', -0.0003170184607205796),
- ('pussy', -0.00060992470408107781),
- ('yuppie', -0.00088256272736631078)]
- -->
 
 ### How does it do
 
 So we can predict factors based on movie scripts. But what we really want to do is to predict how
 each user will rate a given movie. We can do this by using our predicted factors together with
-the users 
+the users' known factors.
 
+To see how well we can infer users' ratings, we use the scripts to make cross-validated predictions
+of each of the thirty factors for all of the 825 movies
+we have scripts for. We then uses these factors to predict ratings for all 138,000 users in the
+MovieLens database for all of these 825 movies.
+Some of these users will already have rated some of these movies. We can test how good our predictions are by comparing
+the predictions with the actual ratings. The accuracy of our measurements can be summarized by the
+[root mean square error](https://en.wikipedia.org/wiki/Root-mean-square_deviation) (RMSE).
+
+There is one more complication we need to address before we can make all these predictions.
+To calculate predictions, we need, in addition to the factors, the average rating of each movie
+(I skipped over this fact above). We try to predict the average ranking using the same method
+we used to predict the factors, that is, building a random forest model based on the words on the script.
+Not surprisingly, the computer does not do great at figuring out what is a good movie or bad.
+There is another approach we can take, which is to combine our predicted factors with the true
+average rating of the movie to make our predicted ranking. This is slightly cheating, because
+it does not solve the true cold-start problem. If a movie is brand-new, there will be no ratings
+of it and no way to know what the average rating would be. However, this is still a useful approach
+for dealing with what we might call the "cool-start" problem: if a movie is new enough that it only
+has reviews from 50-100 users, we do not have enough information to accurately infer all 30 factors
+from user ratings, but we do have enough information to estimate the average rating. If this
+is the case, and we have access to the script, then our semi-cheating approach could work well.
+
+So how do the predictions actually do? The first method, where predict the average rating
+from the script, has an cross-validated RMSE of 0.907. The second method, where use the true
+average rating, but predict the factors from the script, has an RMSE of 0.804.
+
+But what do these numbers mean? How good are these predictions? To help us interpret these numbers,
+we can compare them with the results of certain simpler prediction systems, to see if all
+the extra work we have done has really paid off.
+
+One simple prediction would just be to predict that each user will rate a movie according to
+that user's average rating. So if the average of all the ratings Vito has made is 3.5, we predict he will rate
+all new movies as 3.5, while if Michael's average rating is 3.9, we predict all his ratings as 3.9.
+This simple prediction system has an RMSE of 0.914. This should be compared to our first method, with an RMSE
+of 0.907. In this case, all the extra information we have from the movie scripts has only made a tiny difference.
+This is because the computer is bad at determining the overall quality (average rating) of a movie.
+
+A slightly better method might be to use both the average rating of a user and the average rating of
+a movie to make each prediction. This gives us an RMSE of 0.845. Since this method also uses
+the true average rating of a movie, it should be compared to our second method with an RMSE of 0.804.
+With this method, where we don't need to predict the average rating, the improvement is more
+significant.
+
+Finally, we can compare to the gold-standard of predictions, which is our original prediction
+system, using the factors infered by user ratings, rather than the factors derived from scripts.
+This method has an RMSE of 0.661. We can conlcude that adding in the script information gets us
+20% of the way from the naive method (which knows nothing about the movie except the average rating)
+to the best predictions.
+
+<!--
 RMSES:
 Predicting all ratings as the global average: 1.006
 Predicting all ratings as user average: 0.914
@@ -450,3 +424,4 @@ Predicting all ratings using factors, centers, and scales as predicted: 0.907
 Predicting all ratings using combination of user and movie average: 0.845
 Predicting all ratings using factors, true centers and scales: 0.804
 Predictions using full softImpute: 0.661
+-->
