@@ -37,12 +37,11 @@ out if they should be called action movies.
 
 Before we get into the details, it should be noted that this isn't a very practical thing to do.
 Classifying movies by genre is already something
-that is done by humans for all movies, it's not a particularly onerous task, and it's not something that computers are likely to
+that is done (by humans) for all movies, and it's not something that computers are likely to
 do better than humans.
 This is not a task that really makes sense for a computer.
-However, while it may not be that useful, this is a fun exercise, and it's a warm-up for Part 2, which is
+However, while it may not be that useful, it's a fun exercise, and it's a warm-up for Part 2, which is
 something more appropriate for computers.
-<!-- TODO fix this paragraph -->
 
 So how do we do this?
 
@@ -375,7 +374,7 @@ including negative numbers and decimals) rather than a binary choice (action or 
 It turns out that,
 just like with genres, some factors are easier to predict than other. Factor 4 is an interesting case.
 Here we show the six movies with the most extreme Factor 4 values, and the words that best
-predict Factor 4.
+predict Factor 4:
 
 <img src="{{ root_url }}/source/images/factor4.png" />
 
