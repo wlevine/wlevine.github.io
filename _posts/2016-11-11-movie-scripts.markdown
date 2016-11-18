@@ -7,7 +7,7 @@ date: 2016-11-11T10:19:57-08:00
 Let's say I'm a computer and I don't know anything about movies. But I can read movie scripts. My human friend wants
 to know which movie to watch. How can I help her?
 
-## Step 1: Inferring movie genres from scripts
+## Step 1: Predicting movie genres from scripts
 
 Maybe my friend wants to watch an action movie?
 
@@ -41,7 +41,8 @@ that is done by humans for all movies, it's not a particularly onerous task, and
 do better than humans.
 This is not a task that really makes sense for a computer.
 However, while it may not be that useful, this is a fun exercise, and it's a warm-up for Part 2, which is
-something more appropriate for computers,
+something more appropriate for computers.
+<!-- TODO fix this paragraph -->
 
 So how do we do this?
 
@@ -81,6 +82,7 @@ The computer reads in all 825 movie scripts, then performs [lemmatization](https
 on each word, which mean that each word is
 transformed to a word you would find at the beginning of dictionary entry (for example, "explodes" is transformed into "explode"
 and "explosions" is transformed into "explosion").
+Stage directions and character names are not removed from the script.
 
 After lemmatization, we find the 10,000 most common words found across all the movie scripts. These words will be used
 as predictors.
@@ -168,7 +170,7 @@ equally good at predicting comedies, which make up 8% of our dataset.
 
 <img src="{{ root_url }}/source/images/roc_curve_comedy.png" />
 
-If we want to correctly predict 80% of comedies, we will have end up mispredicting about 40% of non-comedies.
+If we want to correctly predict 80% of comedies, we will end up mispredicting about 40% of non-comedies.
 Why is this so bad? Computers just aren't good at jokes.
 
 These are the words most predictive of comedy:
@@ -205,7 +207,7 @@ So it turns out that bag-of-words is better at identifying certain aspects of mo
 -->
 
 
-## Part 2: Predict rating for many users based on scripts
+## Part 2: Predicting ratings for many users based on scripts
 
 If we're in the business of recommending movies, why not go all out and make personalized predictions for the whole
 world, predicting how much each person will like every movie ever made. One technique for doing this is collaborative filtering.
@@ -301,7 +303,7 @@ And these are the movies with the most negative Factor 1 value:
 
 These factor values are determined by the computer solely by looking at users' ratings of movies and not
 knowing anything about the content of the movie.
-However, it looks like the computer has "discovered" some property of movies that we
+However, it looks like the computer has "discovered" some property of movies that
 corresponds to what we might call unorthdox (high factor 1) vs. straightforward (low factor 1).
 
 Just for fun, let's look at factor 2 also. These are the most factor 2 movies:
@@ -368,10 +370,12 @@ The factors may be interesting on their own, but we would like to be able to pre
 To do that, we use a similar procedure to what we did for predicting genres, using the same bag-of-words model.
 There is a technical difference that means we have to do random forest regression rather than random forest classification.
 This is because what we are trying to predict is a continuous variable (the value of a factor can be any number,
-including negative numbers and decimals) rather than binary choice (action or not-action).
+including negative numbers and decimals) rather than a binary choice (action or not-action).
 
 It turns out that,
-just like with genres, some factors are easier to predict than other. Factor 4 is an interesting case:
+just like with genres, some factors are easier to predict than other. Factor 4 is an interesting case.
+Here we show the six movies with the most extreme Factor 4 values, and the words that best
+predict Factor 4.
 
 <img src="{{ root_url }}/source/images/factor4.png" />
 
