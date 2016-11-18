@@ -35,9 +35,15 @@ For these 825 movies, we already know the answer, but
 the exciting part is that then we can apply the same model to new movies that we don't know anything about to figure
 out if they should be called action movies.
 
-So how do we do this?
+Before we get into the details, it should be noted that this isn't a very practical thing to do.
+Classifying movies by genre is already something
+that is done by humans for all movies, it's not a particularly onerous task, and it's not something that computers are likely to
+do better than humans.
+This is not a task that really makes sense for a computer.
+However, while it may not be that useful, this is a fun exercise, and it's a warm-up for Part 2, which is
+something more appropriate for computers,
 
-<!-- ZZZ note this isn't that useful -->
+So how do we do this?
 
 ### Bag of words
 
@@ -45,7 +51,6 @@ The [bag-of-words model](https://en.wikipedia.org/wiki/Bag-of-words_model) is a 
 We will use this model for our analysis of movie scripts.
 Bag-of-words means that we only care about the frequency of words in the text.
 We do not care about the order of words at all.
-
 In other words, these three sentences are all equivalent according to the bag-of-words models:
 
 * Houston, we have a problem.
@@ -114,7 +119,7 @@ Non-action:
 * Duck Soup: <span style="color: green">not-action</span>
 
 Is there a way to correctly classify more action movies? Yes, but only if we are willing to misclassify more non-action movies.
-This trade-off is shown on a ROC curve:
+This trade-off is shown on a [ROC curve](https://en.wikipedia.org/wiki/Receiver_operating_characteristic):
 
 <img src="{{ root_url }}/source/images/roc_curve_action.png" />
 
@@ -202,38 +207,42 @@ So it turns out that bag-of-words is better at identifying certain aspects of mo
 
 ## Part 2: Predict rating for many users based on scripts
 
-### Collaborative filtering
-
 If we're in the business of recommending movies, why not go all out and make personalized predictions for the whole
 world, predicting how much each person will like every movie ever made. One technique for doing this is collaborative filtering.
 
-Collaborative filtering refers to methods that use users with similar tastes and uses them to make predictions.
+### Collaborative filtering
+
+Collaborative filtering refers to methods that use users with similar tastes to make predictions.
 If people who like Inception tend to also rate
 the Matrix highly, and Leo likes Inception, it's reasonable to predict that Leo will also rate the Matrix highly.
 
 [MovieLens](https://movielens.org/) provides a [dataset of 20 million movie ratings](http://grouplens.org/datasets/movielens/)
-of 27,000 movies by 138,000 users, so this is a great dataset for implementing a collaborative-filtering algorithm.
-
+of 27,000 movies by 138,000 users, so this is a great dataset for testing a collaborative-filtering algorithm.
 
 So what does this have to do with scripts?
 Collaborative filtering has the weakness that it depends on existing ratings. If a new movie comes out that
-that few people have rated, collaborative filtering will have a hard time. This is known as the cold-start problem.
+that few people have seen yet, collaborative filtering will not be able to make good predictions. This is known as the *cold-start problem*.
 We want to see if having
-access to the script will help with this problem. Can the words in the script help predict the factors for each movie?
+access to the script will help with this problem. Can the words in the script help predict how much a given user will like it?
 
 ### The factors
 
 One algorithm for doing collaborative-filtering tries to discovers a certain
-number of factors that characterize people's taste in movies.
-Both users and movies are assigned the factors ratings, one for each factor, which are inferred by their known
-ratings.
-Users are predicted to like a movie if their factor values align. So if *Anchorman* has high "factor 1" and low "factor 2",
+number (let's say thirty) of hidden *factors* that characterize people's taste in movies.
+Both users and movies are assigned thirty factor ratings, one for each factor, which are inferred by the ratings of movies
+they have already seen.
+A specific users is predicted to like a specific movie if the factors align between the user and the movie.
+So if *Anchorman* has high "factor 1" and low "factor 2",
 and Jim also has high "factor 1" and low "factor 2", then we predict that Jim will rate *Anchorman* highly.
 While if Jules has low factor 1 and high factor 2, we predict that he will not like *Anchorman*.
 This
-is encoded in matrices as follows:
+is encoded in three matrices as follows:
 
 <img src="{{ root_url }}/source/images/matrix_stuff.png" />
+
+The algorithm that discovers all these factor values (filling the matrices above), is provided by the
+[softImpute package](https://cran.r-project.org/web/packages/softImpute/vignettes/softImpute.html)
+for R.
 
 To make this a little more concrete, let's look at the factors found in the MovieLens rating dataset.
 
@@ -290,11 +299,10 @@ And these are the movies with the most negative Factor 1 value:
   632   Rock, The (1996)  -0.032044
 -->
 
-These factor values are determined by the computer solely by looking at users' ratings of the movie and not
+These factor values are determined by the computer solely by looking at users' ratings of movies and not
 knowing anything about the content of the movie.
 However, it looks like the computer has "discovered" some property of movies that we
 corresponds to what we might call unorthdox (high factor 1) vs. straightforward (low factor 1).
-
 
 Just for fun, let's look at factor 2 also. These are the most factor 2 movies:
 
@@ -355,16 +363,25 @@ distinction between upbeat movies (high factor 2) and disturbing movies (low fac
 
 ### Predicting factors from scripts
 
-The factors may be interesting on their own, but can we associate them with the words in the script. It turns out that,
+So far we haven't used any data from the scripts.
+The factors may be interesting on their own, but we would like to be able to predict them using the words in the script.
+To do that, we use a similar procedure to what we did for predicting genres, using the same bag-of-words model.
+There is a technical difference that means we have to do random forest regression rather than random forest classification.
+This is because what we are trying to predict is a continuous variable (the value of a factor can be any number,
+including negative numbers and decimals) rather than binary choice (action or not-action).
+
+It turns out that,
 just like with genres, some factors are easier to predict than other. Factor 4 is an interesting case:
 
 <img src="{{ root_url }}/source/images/factor4.png" />
 
+We can look at the accuracy of our factor predictions, but what we were are really interested
+in is predictions of user *ratings*, which are based on our predictions of factors.
 
 ### How does it do
 
 So we can predict factors based on movie scripts. But what we really want to do is to predict how
-each user will rate a given movie. We can do this by using our predicted factors together with
+each user will rate a given movie. We can do this by combining our predicted movie factors together with
 the users' known factors.
 
 To see how well we can infer users' ratings, we use the scripts to make cross-validated predictions
@@ -389,13 +406,13 @@ has reviews from 50-100 users, we do not have enough information to accurately i
 from user ratings, but we do have enough information to estimate the average rating. If this
 is the case, and we have access to the script, then our semi-cheating approach could work well.
 
-So how do the predictions actually do? The first method, where predict the average rating
-from the script, has an cross-validated RMSE of 0.907. The second method, where use the true
-average rating, but predict the factors from the script, has an RMSE of 0.804.
+So how do the predictions actually do? The first method, which predicts the average rating
+from the script, has an cross-validated RMSE of 0.907. The second method, which uses the true
+average rating, but predicts the factors from the script, has an RMSE of 0.804.
 
 But what do these numbers mean? How good are these predictions? To help us interpret these numbers,
 we can compare them with the results of certain simpler prediction systems, to see if all
-the extra work we have done has really paid off.
+the extra work we have done has actually paid off.
 
 One simple prediction would just be to predict that each user will rate a movie according to
 that user's average rating. So if the average of all the ratings Vito has made is 3.5, we predict he will rate
@@ -406,7 +423,7 @@ This is because the computer is bad at determining the overall quality (average 
 
 A slightly better method might be to use both the average rating of a user and the average rating of
 a movie to make each prediction. This gives us an RMSE of 0.845. Since this method also uses
-the true average rating of a movie, it should be compared to our second method with an RMSE of 0.804.
+the true average rating of a movie, it should be compared to our second method, which has an RMSE of 0.804.
 With this method, where we don't need to predict the average rating, the improvement is more
 significant.
 
