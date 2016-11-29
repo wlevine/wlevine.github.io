@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Movie Scripts"
+title: "Personalized movie recommendations based on script text"
 date: 2016-11-11T10:19:57-08:00
 ---
 
@@ -445,3 +445,5 @@ Predicting all ratings using combination of user and movie average: 0.845
 Predicting all ratings using factors, true centers and scales: 0.804
 Predictions using full softImpute: 0.661
 -->
+
+The code for this project is available [here](https://github.com/wlevine/movie-script-recommender).
