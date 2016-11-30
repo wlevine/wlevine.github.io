@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Producing interlinear translations for foreign-language Learners"
-date: 2016-11-29T12:41:27-08:00
+title: "Producing interlinear translations for foreign-language learners"
+date: 2016-11-02T12:41:27-08:00
 ---
 
 This work was inspired by commenter "SFReader" who [claims that it
@@ -56,5 +56,12 @@ To account for non one-to-one correspondence, I test several possible alignments
 for sentences or pairs of sentences and select the one with the highest likelihood.
 [Here is an example of the output](https://rawgit.com/wlevine/translation_interleaver/master/texts/underground_chap1.html). Embarrasingly, it gets the first sentence wrong, but other
 than that it does pretty well.
+<!--
+Bing translate
+How to use-possible web interface
+how does it perform
+How does it work
+peek ahead
+-->
 
-The code for this is [available on GitHub](https://github.com/wlevine/translation_interleaver).
+Code and directions for use are [available on GitHub](https://github.com/wlevine/translation_interleaver).
