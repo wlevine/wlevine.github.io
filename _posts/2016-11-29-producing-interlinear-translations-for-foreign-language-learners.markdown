@@ -24,7 +24,7 @@ a very long interlinear text. How to get one?
 
 One good place to start is the Bible. For two reasons. First, the Bible has been translated into more human
 languages than any other book. Second, the chapter and verse structure of the Bible
-is already segmented into short segments, which makes aligning the text trivial. (Also,
+means that it is already split into short segments, which makes aligning the texts trivial. (Also,
 there are free audiobooks of the Bible available in many languages, which helps for
 a language learner.)
 
@@ -36,15 +36,19 @@ translation, like this [Hungarian and English version of the Gospel of Mark](htt
 
 ### Solution 2: Aligning a human-translated text using machine translation
 
-What if you're interested in reading something other than the Bible? If you have
+What if you're interested in reading something other than the Bible?
+
+If you have
 a source text in one language and a translation of that text in another, you can't
 simply make an interlinear text by aligning the two texts sentence-by-sentence. This is
 because a single sentence in the source may get split up into multiple sentences in
 the translation or vice versa. We would like to have an automated procedure for
-correlate sentences, taking into a account that in general this can be a many-to-many
-correspondence. This is called parallel-text alignment and a standard algorithm
+correlating sentences, taking into account that in general this can be a many-to-many
+correspondence. This is called parallel-text alignment; a standard algorithm
 for doing it is the [Gale-Church algorithm](https://en.wikipedia.org/wiki/Gale%E2%80%93Church_alignment_algorithm).
-I chose a different approach, taking advantage of machine translation. If a sentence
+I chose a different approach, taking advantage of machine translation.
+Due to the poor quality of machine translation, we don't just want to use
+the machine-translated text directly. However, if a sentence
 in the human-translated text shares a high number of words with the machine-translated
 version of a sentence in the source text, we assume that these two sentences are correlated.
 To account for non one-to-one correspondence, I test several possible alignments
