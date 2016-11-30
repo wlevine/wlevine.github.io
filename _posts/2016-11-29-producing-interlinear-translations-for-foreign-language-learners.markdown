@@ -46,6 +46,7 @@ the translation or vice versa. We would like to have an automated procedure for
 correlating sentences, taking into account that in general this can be a many-to-many
 correspondence. This is called parallel-text alignment; a standard algorithm
 for doing it is the [Gale-Church algorithm](https://en.wikipedia.org/wiki/Gale%E2%80%93Church_alignment_algorithm).
+
 I chose a different approach, taking advantage of machine translation.
 Due to the poor quality of machine translation, we don't just want to use
 the machine-translated text directly. However, if a sentence
@@ -55,4 +56,5 @@ To account for non one-to-one correspondence, I test several possible alignments
 for sentences or pairs of sentences and select the one with the highest likelihood.
 [Here is an example of the output](https://rawgit.com/wlevine/translation_interleaver/master/texts/underground_chap1.html). Embarrasingly, it gets the first sentence wrong, but other
 than that it does pretty well.
+
 The code for this is [available on GitHub](https://github.com/wlevine/translation_interleaver).
